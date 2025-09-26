@@ -1,0 +1,90 @@
+﻿@page "/"
+
+<PageTitle>Flight Delay Prediction App</PageTitle>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+                <div class="text-center">
+                    <h1 class="display-4 fw-bold">
+                        <i class="fas fa-plane me-3"></i>
+                        Flight Delay Predictor
+                    </h1>
+                    <p class="lead">
+                        Predict flight delays using machine learning trained on real FAA flight data from 2013.
+                        Get accurate predictions based on day of week, airports, carriers, and more!
+                    </p>
+                    <hr class="my-4 bg-white">
+                    <p class="mb-4">
+                        Our AI-powered system combines logistic regression and historical flight data 
+                        to provide reliable delay probability predictions with confidence scores.
+                    </p>
+                    <a class="btn btn-light btn-lg" href="/flight-delay" role="button">
+                        <i class="fas fa-magic me-2"></i>
+                        Start Predicting Delays
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Machine Learning</h5>
+                            <p class="card-text">
+                                Uses trained scikit-learn models with real flight data to make accurate predictions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-database fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Real Data</h5>
+                            <p class="card-text">
+                                Based on actual FAA flight delay data from 2013 with over 16,000 route combinations.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                            <h5 class="card-title">High Confidence</h5>
+                            <p class="card-text">
+                                Provides confidence scores and combines multiple prediction methods for reliability.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 p-4 bg-light rounded">
+                <h4 class="mb-3">How It Works</h4>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <ol>
+                            <li><strong>Select Parameters:</strong> Choose day of week, origin/destination airports, carrier, etc.</li>
+                            <li><strong>ML Analysis:</strong> Our model processes your inputs using trained algorithms.</li>
+                        </ol>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol start="3">
+                            <li><strong>Historical Comparison:</strong> Combines predictions with historical route data.</li>
+                            <li><strong>Get Results:</strong> Receive delay probability with confidence score.</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/flight-delay" class="btn btn-primary">
+                        Try the Predictor Now <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

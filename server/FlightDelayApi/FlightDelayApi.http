@@ -1,0 +1,6 @@
+@FlightDelayApi_HostAddress = http://localhost:5107
+
+GET {{FlightDelayApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

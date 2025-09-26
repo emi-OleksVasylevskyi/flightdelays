@@ -1,0 +1,293 @@
+@page "/flight-delay"
+@using FlightDelayBlazor.Models
+@using FlightDelayBlazor.Services
+@inject IFlightDelayApiService ApiService
+@inject ILogger<FlightDelayPrediction> Logger
+@rendermode InteractiveServer
+
+<PageTitle>Flight Delay Predictor</PageTitle>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="card-title mb-0">
+                        <i class="fas fa-plane me-2"></i>
+                        Flight Delay Predictor
+                    </h1>
+                    <p class="mb-0">Predict flight delays using machine learning</p>
+                </div>
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">@loadingMessage</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dayOfWeek" class="form-label fw-bold">Day of Week</label>
+                                <select id="dayOfWeek" class="form-select" @bind="selectedDayOfWeek">
+                                    <option value="0">Select a day...</option>
+                                    <option value="1">Sunday</option>
+                                    <option value="2">Monday</option>
+                                    <option value="3">Tuesday</option>
+                                    <option value="4">Wednesday</option>
+                                    <option value="5">Thursday</option>
+                                    <option value="6">Friday</option>
+                                    <option value="7">Saturday</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="originAirport" class="form-label fw-bold">Origin Airport</label>
+                                <select id="originAirport" class="form-select" @bind="selectedOriginAirportId">
+                                    <option value="0">Select origin airport...</option>
+                                    @foreach (var airport in airports)
+                                    {
+                                        <option value="@airport.AirportID">@airport.AirportName</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="destAirport" class="form-label fw-bold">Destination Airport</label>
+                                <select id="destAirport" class="form-select" @bind="selectedDestAirportId">
+                                    <option value="0">Select destination airport...</option>
+                                    @foreach (var airport in airports)
+                                    {
+                                        <option value="@airport.AirportID">@airport.AirportName</option>
+                                    }
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="carrier" class="form-label fw-bold">Carrier</label>
+                                <select id="carrier" class="form-select" @bind="selectedCarrier">
+                                    <option value="AA">American Airlines (AA)</option>
+                                    <option value="DL">Delta Air Lines (DL)</option>
+                                    <option value="UA">United Airlines (UA)</option>
+                                    <option value="SW">Southwest Airlines (SW)</option>
+                                    <option value="US">US Airways (US)</option>
+                                    <option value="WN">Southwest (WN)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="month" class="form-label fw-bold">Month</label>
+                                <select id="month" class="form-select" @bind="selectedMonth">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="depTime" class="form-label fw-bold">Departure Time</label>
+                                <select id="depTime" class="form-select" @bind="selectedDepTime">
+                                    <option value="600">6:00 AM - Early Morning</option>
+                                    <option value="800">8:00 AM - Morning</option>
+                                    <option value="1000">10:00 AM - Mid Morning</option>
+                                    <option value="1200">12:00 PM - Noon</option>
+                                    <option value="1400">2:00 PM - Afternoon</option>
+                                    <option value="1600">4:00 PM - Late Afternoon</option>
+                                    <option value="1800">6:00 PM - Evening</option>
+                                    <option value="2000">8:00 PM - Night</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-center mb-3">
+                            <button class="btn btn-primary btn-lg" @onclick="PredictDelay" disabled="@(!CanPredict() || isPredicting)">
+                                @if (isPredicting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    <text>Predicting...</text>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-magic me-2"></i>
+                                    <text>Predict Flight Delay</text>
+                                }
+                            </button>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Error:</strong> @errorMessage
+                            </div>
+                        }
+
+                        @if (predictionResult?.Success == true && predictionResult.Prediction != null)
+                        {
+                            var prediction = predictionResult.Prediction;
+                            var delayPercentage = prediction.DelayProbability * 100;
+                            var alertClass = delayPercentage > 50 ? "alert-danger" : delayPercentage > 30 ? "alert-warning" : "alert-success";
+                            var iconClass = delayPercentage > 50 ? "fa-exclamation-triangle" : delayPercentage > 30 ? "fa-clock" : "fa-check-circle";
+
+                            <div class="alert @alertClass border-0 shadow" role="alert">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <i class="fas @iconClass fa-3x"></i>
+                                    </div>
+                                    <div class="col">
+                                        <h4 class="alert-heading">
+                                            Delay Probability: @delayPercentage.ToString("F1")%
+                                        </h4>
+                                        <p class="mb-0">
+                                            <strong>Confidence:</strong> @prediction.ConfidencePercent.ToString("F1")%
+                                        </p>
+                                        <hr class="my-2">
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <small>
+                                                    <strong>ML Model:</strong> @((prediction.LogisticProbability * 100).ToString("F1"))%<br>
+                                                    <strong>Historical:</strong> @((prediction.HistoricalPairProbability * 100).ToString("F1"))%
+                                                </small>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <small>
+                                                    <strong>Method:</strong> @prediction.PredictionMethod<br>
+                                                    <strong>Route:</strong> @GetAirportName(selectedOriginAirportId) → @GetAirportName(selectedDestAirportId)
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Airport> airports = new();
+    private FlightDelayResponse? predictionResult;
+    
+    private int selectedDayOfWeek = 0;
+    private int selectedOriginAirportId = 0;
+    private int selectedDestAirportId = 0;
+    private string selectedCarrier = "AA";
+    private int selectedMonth = DateTime.Now.Month;
+    private int selectedDepTime = 800;
+    
+    private bool isLoading = true;
+    private bool isPredicting = false;
+    private string loadingMessage = "Loading airports...";
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            loadingMessage = "Loading airports from API...";
+            airports = await ApiService.GetAirportsAsync();
+            
+            if (airports.Count == 0)
+            {
+                errorMessage = "Failed to load airports. Please check if the API is running on http://localhost:5107";
+            }
+            
+            Logger.LogInformation("Loaded {Count} airports", airports.Count);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading airports: {ex.Message}";
+            Logger.LogError(ex, "Error loading airports");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool CanPredict()
+    {
+        return selectedDayOfWeek > 0 && 
+               selectedOriginAirportId > 0 && 
+               selectedDestAirportId > 0 &&
+               selectedOriginAirportId != selectedDestAirportId;
+    }
+
+    private async Task PredictDelay()
+    {
+        if (!CanPredict()) return;
+
+        isPredicting = true;
+        errorMessage = "";
+        predictionResult = null;
+
+        try
+        {
+            var request = new FlightDelayRequest(
+                DayOfWeek: selectedDayOfWeek,
+                OriginAirportID: selectedOriginAirportId,
+                DestAirportID: selectedDestAirportId,
+                Month: selectedMonth,
+                Carrier: selectedCarrier,
+                CRSDepTime: selectedDepTime
+            );
+
+            Logger.LogInformation("Making prediction request: {@Request}", request);
+            predictionResult = await ApiService.PredictDelayAsync(request);
+            
+            if (!predictionResult.Success)
+            {
+                errorMessage = predictionResult.Error ?? "Unknown error occurred";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error making prediction: {ex.Message}";
+            Logger.LogError(ex, "Error making prediction");
+        }
+        finally
+        {
+            isPredicting = false;
+        }
+    }
+
+    private string GetAirportName(int airportId)
+    {
+        return airports.FirstOrDefault(a => a.AirportID == airportId)?.AirportName ?? "Unknown";
+    }
+
+    private string GetDayName(int dayOfWeek)
+    {
+        return dayOfWeek switch
+        {
+            1 => "Sunday",
+            2 => "Monday", 
+            3 => "Tuesday",
+            4 => "Wednesday",
+            5 => "Thursday",
+            6 => "Friday",
+            7 => "Saturday",
+            _ => "Unknown"
+        };
+    }
+}
